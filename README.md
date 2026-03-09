@@ -1,11 +1,11 @@
 # reality-benchmarker
-A lightweight shell script that evaluates and scores candidate domains for the **Reality proxy protocol**, helping identify suitable camouflage domains.
+A lightweight shell script that evaluates and scores candidate domains for the **[Reality proxy protocol](https://github.com/XTLS/REALITY)**, helping identify suitable camouflage domains.
 
 ## Background
-Reality is a censorship-evasion proxy protocol that disguises itself as servers belonging to legitimate content providers.
+Reality is a censorship-evasion proxy protocol that disguises servers as legitimate content providers.
 For authentic client traffic, the server presents a temporary TLS certificate under the camouflage domain.
 For invalid or probing packets, the server fetches the real certificate from the camouflage domain and forwards traffic accordingly.
-Choosing an appropriate camouflage domain is therefore important for both reliability and stealth. This script automates the process of testing and benchmarking candidate domains.
+Choosing an appropriate camouflage domain is therefore important for both reliability and stealth. This script automates the process of testing and benchmarking given domain candidates.
 ___
 
 ## What the Script Checks
@@ -16,17 +16,18 @@ These must be supported for Reality to function correctly or appear believable:
 - X25519 key exchange
 - No redirection
 ### Preferred Features
-These improve compatibility or realism but are optional:
+These improve realism but are optional:
 - OCSP support
 - TLS certificate fetching latency similarity
 ### Not Benchmarked
 The following characteristics are intentionally not evaluated:
-- IP similarity
+- IP similarity: 
 Large services often operate across multiple subnets or networks.
-- HTTP status code
+- HTTP status code: 
 Requests may legitimately target internal services or endpoints that do not return content.
-- Port blocking & host server proxy behavior
+- Port blocking & host server proxy behavior: 
 Filtering and proxying behavior depends on user configuration rather than the properties of the target domain.
+---
 
 ## Features
 * Read domain lists from text or CSV files
@@ -34,14 +35,15 @@ Filtering and proxying behavior depends on user configuration rather than the pr
 ___
 
 ## Usage
-Example:
-```bash
- bash ./benchmark_reality_candidates.sh -6 -c address.close.to.client -f test.csv -k domain_column -o result.txt more.domain.com www.domain.com
- ```
+Make sure to have tcping installed first.
 Show help with: 
 ```bash
 bash ./benchmark_reality_candidates.sh -h
 ```
+Example usage:
+```bash
+ bash ./benchmark_reality_candidates.sh -6 -c address.close.to.client -f test.csv -k domain_column -o result.txt more.domain.com www.domain.com
+ ```
 ___
 
 ## TLS Certificate Fetching Benchmark
