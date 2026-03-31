@@ -85,3 +85,9 @@ If any mandatory requirement fails, the final score will be **0**.
 | TLS 1.3 + H2 + X25519 + No redirection | 50    |
 | OCSP support                           | 25    |
 | TLS certificate fetching time          | 25    |
+
+
+---
+
+# Limitations
+This tool is written in Bash. It does not support concurrency or asynchrony. In addition, because it runs on the server side, it waits 0.2 seconds between each domain check to reduce the risk of flagged as abusive traffic.
