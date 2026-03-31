@@ -53,7 +53,7 @@ Main(){
     Log "Nping result (min/avg/max ms): $Client_Nping_Result"
     echo
 
-    trap PrintWinners EXIT INT TERM HUP
+    trap OnExit EXIT INT TERM HUP
 
     if [[ ${#Sites[@]} -gt 0 ]]; then
         Log "Benchmarking command-line sites..."
@@ -247,6 +247,12 @@ PrintWinners(){
     fi
     echo "Winners:"
     printf "%s\n\n" "${Scores[@]}"
+}
+
+
+OnExit(){
+    PrintWinners
+    exit 1
 }
 
 
