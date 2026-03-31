@@ -90,4 +90,4 @@ If any mandatory requirement fails, the final score will be **0**.
 ---
 
 # Limitations
-This tool is written in Bash. It does not support concurrency or asynchrony. In addition, because it runs on the server side, it waits 0.2 seconds between each domain check to reduce the risk of flagged as abusive traffic.
+This tool is written in Bash. It does not support concurrency or asynchrony.
