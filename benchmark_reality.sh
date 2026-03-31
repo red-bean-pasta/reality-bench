@@ -38,19 +38,19 @@ EOF
 
 
 Scores=()
-Client_Tcping_Result=""
+Client_Nping_Result=""
 
 
 Main(){
-    CheckDependency tcping
+    CheckDependency nping
     echo
 
     ProcessArgs "$@"    
     echo
 
-    Log "Tcping client address $Client_Address..."
-    Client_Tcping_Result=$(GetTcpingTime "$Client_Address") || exit
-    Log "Tcping result (min/avg/max ms): $Client_Tcping_Result"
+    Log "Nping client address $Client_Address..."
+    Client_Nping_Result=$(GetNpingTime "$Client_Address") || exit 1
+    Log "Nping result (min/avg/max ms): $Client_Nping_Result"
     echo
 
     trap PrintWinners EXIT INT TERM HUP
@@ -59,7 +59,6 @@ Main(){
         Log "Benchmarking command-line sites..."
         local s; for s in "${Sites[@]}"; do
             TestSingleSite "$s" || true
-            sleep 0.2
             echo
         done
         echo
@@ -133,7 +132,6 @@ TestFileSites(){
 
     local s; while IFS= read -r s; do
         TestSingleSite "$s" || true
-        sleep 0.2
         echo
     done < <(input_stream)
 
@@ -220,7 +218,7 @@ Score(){
         [latency]=0.5
     )
     w=${numeric_weights[latency]}
-    Log "Roughly benchmarking TLS handshake time with tcping lantency..."
+    Log "Roughly benchmarking TLS handshake time with nping lantency..."
     local latency_weight; latency_weight=$(WeighTlsHandshakeLatency "${_dict[handshake_time]}")
     Log "TLS handshake weight: $latency_weight"
     score=$(FloatCalculate "$score + $room * $w * $latency_weight")
@@ -252,39 +250,40 @@ PrintWinners(){
 }
 
 
-GetTcpingTime(){
-    Log "Tcping with 6 packets..."
+GetNpingTime(){
+    Log "Nping with 6 packets..."
     local output; for i in {1..3}; do
-        if ! output=$(tcping -c 6 -t 3 --no-color "$1" 443); then
-            Log "Attempt $i: Failed to tcping $1"
+        if ! output=$(nping --tcp-connect -c 6 --delay 1s -p 443 "$1" ); then
+            Log "Attempt $i: Failed to nping $1"
             continue
         fi
 
-        local unsuccessful_probes; unsuccessful_probes=$(printf "%s" "$output" | awk -F' ' '/unsuccessful probes/ {print $3}')
-        if FloatCheck "$unsuccessful_probes > 6 * 0.2"; then
-            Log "Attempt $i: Too many unsuccessful probes: $unsuccessful_probes"
+        local fail_rate; fail_rate=$(printf "%s" "$output" | awk -F'|' '/^TCP connection attempts:/ {print $3}' | awk -F' ' '{gsub(/[%()]/,"",$3); print $3}')
+        Log "Fail rate: $fail_rate"
+        if FloatCheck "$fail_rate > 20"; then
+            Log "Attempt $i: Too many failed: $fail_rate%"
             continue
         fi
-        
-        local result; result=$(printf "%s" "$output" | awk -F' ' '/rtt/ {print $3}')
+
+        local result; result=$(printf "%s" "$output" | awk -F'[|:]' '/^Max rtt:/ {gsub(/ms| /,""); print $4 "/" $6 "/" $2}')
         echo "$result"
         return 0
     done
     
-    Log "Failed to tcping $1"
+    Log "Failed to nping $1"
     return 1
 }
 
 
 WeighTlsHandshakeLatency(){
     local -a tls_result; IFS='/' read -ra tls_result <<<"$1"
-    local -a tcp_result; IFS='/' read -ra tcp_result <<<"$Client_Tcping_Result"
+    local -a tcp_result; IFS='/' read -ra tcp_result <<<"$Client_Nping_Result"
 
     local tls_avg=${tls_result[1]} tcp_avg=${tcp_result[1]}
     local tls_span; tls_span=$(FloatCalculate "${tls_result[2]} - ${tls_result[0]}")
     local tcp_span; tcp_span=$(FloatCalculate "${tcp_result[2]} - ${tcp_result[0]}")
 
-    # TLS handshake takes 2RTT or 6 directional trips, one for TCP and one for TLS; meanwhile, tcping only takes only 1
+    # TLS handshake takes 2RTT or 6 directional trips, one for TCP and one for TLS; meanwhile, nping only takes only 1
     local visibility; visibility=$(FloatCalculate "$tls_avg / 2 / ($tcp_avg + $tcp_span + 0.25 * $tls_span / 2 + 10)") # 10ms acts as the tcp_jitter floor since the tcp_jitter samples is too small
     FloatCalculate "1 / (1 + (2 * $visibility)^3)"
 }

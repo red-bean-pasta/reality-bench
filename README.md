@@ -61,7 +61,7 @@ This script compares candidate domains with a user-provided reference address th
 The goal is to estimate how realistic the TLS certificate fetching behavior appears.
 
 ### Workflow
-* Measure TCP latency to the reference address using `tcping`
+* Measure TCP latency to the reference address using `nping`
 * Perform a TLS connection to the candidate domain
 * Evaluate TLS handshake latency relative to the reference latency
 
